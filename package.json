@@ -1,0 +1,15 @@
+{
+  "name": "killfeed",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^13.8.1",
+    "git": "^0.1.5"
+  }
+}
