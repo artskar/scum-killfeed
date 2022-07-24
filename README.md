@@ -11,4 +11,4 @@ and get your own channel id to place it in "target_channel".
 
 and place ur squad nicknames to "names" field in config.json
 
-You also can use bot-hosting.net to run this bot almost for free. 
+You can use bot-hosting.net to run this bot almost for free. 
