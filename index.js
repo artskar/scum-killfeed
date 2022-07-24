@@ -1,34 +1,13 @@
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const fetch = require('node-fetch');
-const { authorization, source_channel, target_channel, cookie, token, debug } = require('./config.json');
+const { authorization, source_channel, target_channel, cookie, token, names, debug } = require('./config.json');
 
 const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 const messagesCount = 10;
 const requestTime = 30 * 1000;
 const isDebug = debug === 'true';
-const names = [
-  'ncux',
-
-  'Mayasaur',
-
-  'MyFight',
-  'MF',
-  'pshepshe',
-
-  'Aggressor',
-  'Помада Кентавра',
-  'JIowaDka',
-  'Unbalanced',
-
-  'Bomzara',
-  'JohnyBoy',
-  'BillyBoy',
-
-  'Godhead',
-  'Surprise!',
-];
 
 const traps = [
   'Mine 01',
