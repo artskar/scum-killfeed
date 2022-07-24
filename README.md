@@ -9,4 +9,6 @@ cookie: cookie
 You also have to find out how to make a bot with discord API. and get a token for the "token" field in config.json
 and get your own channel id to place it in "target_channel".
 
+and place ur squad nicknames to "names" field in config.json
+
 You also can use bot-hosting.net to run this bot almost for free. 
