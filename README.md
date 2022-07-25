@@ -15,7 +15,7 @@
 2) You also have to find out how to make a bot with discord API. and get a token for the "**token**" field in [config.json](https://github.com/artskar/scum-killfeed/blob/main/config.json)
 and get your own channel id to place it in "**target_channel**".
 
-    [RU | Посмотреть как создать и добавить бота на сервер и узнать id канала](https://vc.ru/services/288966-bot-discord-kak-sozdat-i-dobavit-na-server)
+    [RU | Посмотреть как создать и добавить бота на сервер и узнать id канала и токен бота](https://vc.ru/services/288966-bot-discord-kak-sozdat-i-dobavit-na-server)
 
     [EN | How to Create a Bot in Discord (1-3 step)](https://www.wikihow.com/Create-a-Bot-in-Discord)
 
