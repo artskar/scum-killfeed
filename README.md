@@ -9,7 +9,6 @@
     source_channel: chat_id,
     authorization: auth-token,
     cookie: cookie,
-    names: ["name1", "name2"]
 }
 ```
 
@@ -17,7 +16,8 @@
 ```
 {
     ...
-    names: ["name1", "name2"],
+    names: ["name1", "name2"], // Squad nicknames
+    trapkills_only: "false", // Send in channel only trapkills from your Squad
     timezone: '1' // Default Moscow timezone in diff with bot-hosting server time
 }
 ```
