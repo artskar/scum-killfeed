@@ -1,13 +1,15 @@
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const fetch = require('node-fetch');
-const { authorization, source_channel, target_channel, cookie, token, names, debug, timezone } = require('./config.json');
+const { authorization, source_channel, target_channel, cookie, token } = require('./auth.json');
+const { names, with_logs, trapkills_only, timezone } = require('./config.json');
 
 const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 const messagesCount = 10;
 const requestTime = 30 * 1000;
-const isDebug = debug === 'true';
+const withLogs = with_logs === 'true';
+const isTrapkillsOnly = trapkills_only === 'true';
 
 const traps = [
   'Mine 01',
@@ -53,7 +55,7 @@ const getEmbed = (killer, victim, weapon, distance, time, text = ' ') => ({
 
 const clean = str => str.replace(':medal: ', '').replace(':skull_crossbones: ', '').replaceAll('*', '')
 const isContainId = idArray => ({ id }) => idArray.findIndex(item => item.id === id) < 0;
-const log = str => isDebug && console.log(str);
+const log = str => withLogs && console.log(str);
 const eq = (str, limit = 10) => str.concat('               ').substring(0, limit);
 const eqLast = (str, limit = 10) => '               '.concat(str).slice(-limit);
 const hoursCorrection = hour => {
@@ -86,7 +88,9 @@ const parseKill = killData => {
         if (traps.includes(weapon) && names.includes(killer)) {
           return getEmbed(killer, victim, weapon, distance, time, '@everyone trapkill');
         }
-        return getEmbed(killer, victim, weapon, distance, time);
+        if (!isTrapkillsOnly) {
+          return getEmbed(killer, victim, weapon, distance, time);
+        }
       }
       return null;
     }
