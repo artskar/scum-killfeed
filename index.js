@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const fetch = require('node-fetch');
-const { authorization, source_channel, target_channel, cookie, token, names, debug } = require('./config.json');
+const { authorization, source_channel, target_channel, cookie, token, names, debug, timezone } = require('./config.json');
 
 const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
@@ -23,7 +23,7 @@ const traps = [
   'CartridgeTrap',
 ];
 
-const getEmbed = (killer, victim, weapon, distance, text = ' ') => ({
+const getEmbed = (killer, victim, weapon, distance, time, text = ' ') => ({
   content: text,
   embeds: [{
     type: 'rich',
@@ -44,7 +44,10 @@ const getEmbed = (killer, victim, weapon, distance, text = ' ') => ({
         value: distance,
         inline: true
       }
-    ]
+    ],
+    footer: {
+      text: time
+    }
   }]
 });
 
@@ -52,8 +55,24 @@ const clean = str => str.replace(':medal: ', '').replace(':skull_crossbones: ', 
 const isContainId = idArray => ({ id }) => idArray.findIndex(item => item.id === id) < 0;
 const log = str => isDebug && console.log(str);
 const eq = (str, limit = 10) => str.concat('               ').substring(0, limit);
+const eqLast = (str, limit = 10) => '               '.concat(str).slice(-limit);
+const hoursCorrection = hour => {
+  if (hour < 10) {
+    return '0' + hour;
+  } else if (hour === 24) {
+    return '00';
+  } else {
+    return hour;
+  }
+}
+const getTime = time => {
+  const hours = hoursCorrection(parseInt(time.substr(0, 2), 10) + parseInt(timezone, 10));
+  const minutes = time.substr(3, 2);
+  return `${hours}:${minutes}`;
+}
 
 const parseKill = killData => {
+  const time = killData.timestamp ? getTime(new Date(killData.timestamp).toTimeString()) : ' ';
   const embeds = killData.embeds && killData.embeds[0];
   if (embeds) {
     const killer = clean(embeds.title);
@@ -62,16 +81,16 @@ const parseKill = killData => {
     if (fields.length > 1) {
       const weapon = clean(fields[0]);
       const distance = clean(fields[1]);
-      log(`${eq(killer)}  -  ${eq(victim)}  |  ${eq(weapon)}  -  ${distance}`);
+      log(`${eq(killer)} - ${eq(victim)} | ${eqLast(distance, 5)} - ${eq(weapon)} ${time}`);
       if (names.includes(killer) || names.includes(victim)) {
         if (traps.includes(weapon) && names.includes(killer)) {
-          return getEmbed(killer, victim, weapon, distance, '@everyone trapkill');
+          return getEmbed(killer, victim, weapon, distance, time, '@everyone trapkill');
         }
-        return getEmbed(killer, victim, weapon, distance);
+        return getEmbed(killer, victim, weapon, distance, time);
       }
       return null;
     }
-    log(`no fields: ${eq(killer)}  -  ${victim}`);
+    log(`no fields: ${eq(killer)}  -  ${victim} | ${time}`);
     return null;
   } else {
     log('no embeds', killData);
@@ -93,9 +112,9 @@ const fetchEffect = (prevKillfeed = []) => {
       data => {
         const newKills = data.filter(isContainId(prevKillfeed));
         const newKillfeed = [...newKills, ...prevKillfeed].slice(0, messagesCount);
-        const kills = newKills.map(parseKill).filter(kill => kill !== null);
+        const kills = newKills.reverse().map(parseKill).filter(kill => kill !== null);
         if (newKills.length) {
-          kills.reverse().map(kill => channel.send(kill));
+          kills.map(kill => channel.send(kill));
         }
         setTimeout(() => fetchEffect(newKillfeed), requestTime);
       },
