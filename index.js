@@ -68,8 +68,8 @@ const hoursCorrection = hour => {
   }
 }
 const getTime = time => {
-  const hours = hoursCorrection(parseInt(time.slice(0, 2), 10) + parseInt(timezone, 10));
-  const minutes = time.slice(3, 2);
+  const hours = hoursCorrection(parseInt(time.substr(0, 2), 10) + parseInt(timezone, 10));
+  const minutes = time.substr(3, 2);
   return `${hours}:${minutes}`;
 }
 
