@@ -56,8 +56,8 @@ const getEmbed = (killer, victim, weapon, distance, time, text = ' ') => ({
 const clean = str => str.replace(':medal: ', '').replace(':skull_crossbones: ', '').replaceAll('*', '')
 const isContainId = idArray => ({ id }) => idArray.findIndex(item => item.id === id) < 0;
 const log = str => withLogs && console.log(str);
-const eq = (str, limit = 10) => str.concat('               ').substring(0, limit);
-const eqLast = (str, limit = 10) => '               '.concat(str).slice(-limit);
+const eq = (str, limit = 15) => str.concat('               ').substring(0, limit);
+const eqLast = (str, limit = 15) => '               '.concat(str).slice(-limit);
 const hoursCorrection = hour => {
   if (hour < 10) {
     return '0' + hour;
@@ -83,7 +83,7 @@ const parseKill = killData => {
     if (fields.length > 1) {
       const weapon = clean(fields[0]);
       const distance = clean(fields[1]);
-      log(`${eq(killer)} - ${eq(victim)} | ${eqLast(distance, 5)} - ${eq(weapon)} ${time}`);
+      log(`${killer.length <= 15 ? eqLast(killer) : eq(killer)} - ${eq(victim)} | ${eqLast(distance, 5)} - ${eq(weapon)} ${time}`);
       if (names.includes(killer) || names.includes(victim)) {
         if (traps.includes(weapon) && names.includes(killer)) {
           return getEmbed(killer, victim, weapon, distance, time, '@everyone trapkill');
