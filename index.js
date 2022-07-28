@@ -1,11 +1,13 @@
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const fetch = require('node-fetch');
-const { authorization, source_channel, target_channel, cookie, token } = require('./auth.json');
+const { authorization, source_channel, target_channel, cookie, token, debug } = require('./auth.json');
 const { names, with_logs, trapkills_only, timezone } = require('./config.json');
 
 const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
+const isProduction = debug !== 'true';
+const defaultColumnLength = 15;
 const messagesCount = 10;
 const requestTime = 30 * 1000;
 const withLogs = with_logs === 'true';
@@ -56,8 +58,8 @@ const getEmbed = (killer, victim, weapon, distance, time, text = ' ') => ({
 const clean = str => str.replace(':medal: ', '').replace(':skull_crossbones: ', '').replaceAll('*', '')
 const isContainId = idArray => ({ id }) => idArray.findIndex(item => item.id === id) < 0;
 const log = str => withLogs && console.log(str);
-const eq = (str, limit = 15) => str.concat('               ').substring(0, limit);
-const eqLast = (str, limit = 15) => '               '.concat(str).slice(-limit);
+const eq = (str, limit = defaultColumnLength) => str.concat('               ').substring(0, limit);
+const eqLast = (str, limit = defaultColumnLength) => '               '.concat(str).slice(-limit);
 const hoursCorrection = hour => {
   if (hour < 10) {
     return '0' + hour;
@@ -83,7 +85,7 @@ const parseKill = killData => {
     if (fields.length > 1) {
       const weapon = clean(fields[0]);
       const distance = clean(fields[1]);
-      log(`${killer.length <= 15 ? eqLast(killer) : eq(killer)} - ${eq(victim)} | ${eqLast(distance, 5)} - ${eq(weapon)} ${time}`);
+      log(`${killer.length <= defaultColumnLength ? eqLast(killer) : eq(killer)} - ${eq(victim)} | ${eqLast(distance, 5)} - ${eq(weapon)} ${time}`);
       if (names.includes(killer) || names.includes(victim)) {
         if (traps.includes(weapon) && names.includes(killer)) {
           return getEmbed(killer, victim, weapon, distance, time, '@everyone trapkill');
@@ -117,7 +119,7 @@ const fetchEffect = (prevKillfeed = []) => {
         const newKills = data.filter(isContainId(prevKillfeed));
         const newKillfeed = [...newKills, ...prevKillfeed].slice(0, messagesCount);
         const kills = newKills.reverse().map(parseKill).filter(kill => kill !== null);
-        if (newKills.length) {
+        if (isProduction && newKills.length) {
           kills.map(kill => channel.send(kill));
         }
         setTimeout(() => fetchEffect(newKillfeed), requestTime);
@@ -133,4 +135,9 @@ robot.on('ready', function () {
   fetchEffect();
 });
 
-robot.login(token);
+if (isProduction) {
+  robot.login(token);
+} else {
+  console.log('Debug is run!');
+  fetchEffect();
+}
