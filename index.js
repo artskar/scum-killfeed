@@ -126,7 +126,7 @@ const fetchEffect = (prevKillfeed = []) => {
       },
       reject => {
         console.log('Fetch rejected, probably auth.json data update needed', reject);
-        channel.send('Fetch rejected, probably auth.json data update needed', JSON.stringify(reject));
+        channel.send('Fetch rejected, probably auth.json data update needed ' + JSON.stringify(reject));
       });
 };
 
