@@ -114,43 +114,44 @@ const parseKillToStatus = killData => {
   }
 };
 
+const fetchEffect = (prevKillfeed = []) => {
+  const channel = robot.channels.cache.get(target_channel);
+
+  fetch(`https://discord.com/api/v9/channels/${source_channel}/messages?limit=${messagesCount}`, {
+    method: 'GET',
+    headers: {
+      authorization,
+      cookie
+    },
+  })
+    .then(response => response.json())
+    .then(
+      data => {
+        const newKills = data.filter(isContainId(prevKillfeed));
+        const newKillfeed = [...newKills, ...prevKillfeed].slice(0, messagesCount);
+        const kills = newKills.reverse().map(parseKill).filter(kill => kill !== null);
+        if (isProduction && newKills.length) {
+          kills.map(kill => {
+            channel.send(kill);
+          });
+          robot.user.setActivity(parseKillToStatus(newKills.at(-1)), {
+            type: 'WATCHING',
+          });
+        }
+        setTimeout(() => fetchEffect(newKillfeed), requestTime);
+      },
+      reject => {
+        console.log('Fetch rejected, probably auth.json data update needed', reject);
+        channel.send('@everyone Fetch rejected, probably auth.json data update needed ' + JSON.stringify(reject));
+        robot.user.setStatus({
+          status: 'offline',
+        });
+        setTimeout(() => fetchEffect(newKillfeed), 60 * 60 * 1000);
+      });
+};
+
 robot.on('ready', function () {
   console.log(robot.user.username + ' is run!');
-  const fetchEffect = (prevKillfeed = []) => {
-    const channel = robot.channels.cache.get(target_channel);
-  
-    fetch(`https://discord.com/api/v9/channels/${source_channel}/messages?limit=${messagesCount}`, {
-      method: 'GET',
-      headers: {
-        authorization,
-        cookie
-      },
-    })
-      .then(response => response.json())
-      .then(
-        data => {
-          const newKills = data.filter(isContainId(prevKillfeed));
-          const newKillfeed = [...newKills, ...prevKillfeed].slice(0, messagesCount);
-          const kills = newKills.reverse().map(parseKill).filter(kill => kill !== null);
-          if (isProduction && newKills.length) {
-            kills.map(kill => {
-              channel.send(kill);
-            });
-            robot.user.setActivity(parseKillToStatus(newKills.at(-1)), {
-              type: 'WATCHING',
-            });
-          }
-          setTimeout(() => fetchEffect(newKillfeed), requestTime);
-        },
-        reject => {
-          console.log('Fetch rejected, probably auth.json data update needed', reject);
-          channel.send('@everyone Fetch rejected, probably auth.json data update needed ' + JSON.stringify(reject));
-          robot.user.setStatus({
-            status: 'offline',
-          });
-          setTimeout(() => fetchEffect(newKillfeed), 60 * 60 * 1000);
-        });
-  };
   robot.user.setStatus({
     status: 'online',
   });
