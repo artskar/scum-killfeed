@@ -13,6 +13,7 @@ const requestTime = 30 * 1000;
 const withLogs = with_logs === 'true';
 const isTrapkillsOnly = trapkills_only === 'true';
 let gotError = false;
+let errorTimer = 2.5;
 
 const traps = [
   'Mine 01',
@@ -140,6 +141,7 @@ const fetchEffect = (prevKillfeed = []) => {
           });
           if (gotError) {
             gotError = false;
+            errorTimer = 2.5;
             robot.user.setStatus({
               status: 'online',
             });
@@ -158,7 +160,8 @@ const fetchEffect = (prevKillfeed = []) => {
         }
         console.log('Fetch rejected, probably auth.json data update needed', reject);
         gotError = true;
-        setTimeout(() => fetchEffect(newKillfeed), 30 * 60 * 1000);
+        errorTimer = errorTimer * 2;
+        setTimeout(() => fetchEffect(newKillfeed), errorTimer * 60 * 1000);
       });
 };
 
