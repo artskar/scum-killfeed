@@ -143,6 +143,8 @@ const fetchEffect = (prevKillfeed = []) => {
             robot.user.setStatus({
               status: 'online',
             });
+            console.log('Fetch after rejected is succeed', reject);
+            channel.send(robot.user.username + ' is back on duty!');
           }
         }
         setTimeout(() => fetchEffect(newKillfeed), requestTime);
