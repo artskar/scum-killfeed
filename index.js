@@ -12,6 +12,7 @@ const messagesCount = 10;
 const requestTime = 30 * 1000;
 const withLogs = with_logs === 'true';
 const isTrapkillsOnly = trapkills_only === 'true';
+let gotError = false;
 
 const traps = [
   'Mine 01',
@@ -137,21 +138,31 @@ const fetchEffect = (prevKillfeed = []) => {
           robot.user.setActivity(parseKillToStatus(newKills.at(-1)), {
             type: 'WATCHING',
           });
+          if (gotError) {
+            gotError = false;
+            robot.user.setStatus({
+              status: 'online',
+            });
+          }
         }
         setTimeout(() => fetchEffect(newKillfeed), requestTime);
       },
       reject => {
+        if (isProduction) {
+          channel.send('@everyone Fetch rejected, probably auth.json data update needed ' + JSON.stringify(reject));
+          robot.user.setStatus({
+            status: 'offline',
+          });
+        }
         console.log('Fetch rejected, probably auth.json data update needed', reject);
-        channel.send('@everyone Fetch rejected, probably auth.json data update needed ' + JSON.stringify(reject));
-        robot.user.setStatus({
-          status: 'offline',
-        });
-        setTimeout(() => fetchEffect(newKillfeed), 60 * 60 * 1000);
+        gotError = true;
+        setTimeout(() => fetchEffect(newKillfeed), 30 * 60 * 1000);
       });
 };
 
 robot.on('ready', function () {
   console.log(robot.user.username + ' is run!');
+  robot.channels.cache.get(target_channel).send(robot.user.username + ' is back on duty!');
   robot.user.setStatus({
     status: 'online',
   });
