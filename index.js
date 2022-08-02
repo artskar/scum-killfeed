@@ -12,8 +12,24 @@ const messagesCount = 10;
 const requestTime = 30 * 1000;
 const withLogs = with_logs === 'true';
 const isTrapkillsOnly = trapkills_only === 'true';
-let gotError = false;
-let errorTimer = 2.5;
+const errorState = {
+  isError: false,
+  timer: 2.5,
+  setError(state) {
+    this.isError = state;
+    if (state === true) {
+      this.updateTimer();
+    } else {
+      this.resetTimer();
+    }
+  },
+  updateTimer() {
+    this.timer = this.timer * 2;
+  },
+  resetTimer() {
+    this.timer = 2.5;
+  }
+};
 
 const traps = [
   'Mine 01',
@@ -139,9 +155,8 @@ const fetchEffect = (prevKillfeed = []) => {
           robot.user.setActivity(parseKillToStatus(newKills.at(-1)), {
             type: 'WATCHING',
           });
-          if (gotError) {
-            gotError = false;
-            errorTimer = 2.5;
+          if (errorState.isError) {
+            errorState.setError(false);
             robot.user.setStatus({
               status: 'online',
             });
@@ -153,15 +168,14 @@ const fetchEffect = (prevKillfeed = []) => {
       },
       reject => {
         if (isProduction) {
-          channel.send('@everyone Fetch rejected, probably auth.json data update needed ' + JSON.stringify(reject));
+          channel.send('@everyone Fetch rejected, next Fetch in ' + errorState.timer + ' minutes' + ', probably auth.json data update needed ' + JSON.stringify(reject));
           robot.user.setStatus({
             status: 'offline',
           });
         }
-        console.log('Fetch rejected, probably auth.json data update needed', reject);
-        gotError = true;
-        errorTimer = errorTimer * 2;
-        setTimeout(() => fetchEffect(newKillfeed), errorTimer * 60 * 1000);
+        console.log('Fetch rejected, probably auth.json data update needed, next Fetch in ' + errorState.timer + ' minutes', reject);
+        errorState.setError(true);
+        setTimeout(() => fetchEffect(newKillfeed), errorState.timer * 60 * 1000);
       });
 };
 
