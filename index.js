@@ -1,4 +1,3 @@
-const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const fetch = require('node-fetch');
 const { authorization, source_channel, target_channel, cookie, token, debug } = require('./auth.json');
@@ -7,11 +6,13 @@ const { names, with_logs, trapkills_only, timezone } = require('./config.json');
 const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 const isProduction = debug !== 'true';
+const withLogs = with_logs === 'true';
+const isTrapkillsOnly = trapkills_only === 'true';
+
 const defaultColumnLength = 15;
 const messagesCount = 10;
 const requestTime = 30 * 1000;
-const withLogs = with_logs === 'true';
-const isTrapkillsOnly = trapkills_only === 'true';
+
 const errorState = {
   isError: false,
   timer: 2.5,
@@ -174,8 +175,10 @@ const fetchEffect = (prevKillfeed = []) => {
           });
         }
         console.log('Fetch rejected, probably auth.json data update needed, next Fetch in ' + errorState.timer + ' minutes', reject);
-        errorState.setError(true);
-        setTimeout(() => fetchEffect(newKillfeed), errorState.timer * 60 * 1000);
+        setTimeout(() => {
+          errorState.setError(true);
+          fetchEffect(newKillfeed);
+        }, errorState.timer * 60 * 1000);
       });
 };
 
