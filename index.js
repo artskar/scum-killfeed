@@ -169,7 +169,8 @@ const fetchEffect = (prevKillfeed = []) => {
       },
       reject => {
         if (isProduction) {
-          channel.send('@everyone Fetch rejected, next Fetch in ' + errorState.timer + ' minutes' + ', probably auth.json data update needed ' + JSON.stringify(reject));
+          const showEveryone = errorState.timer === 2.5 ? '' : '@everyone ';
+          channel.send(showEveryone + 'Fetch rejected, next Fetch in ' + errorState.timer + ' minutes' + '```' + JSON.stringify(reject) + '```' + 'probably auth.json data update needed ');
           robot.user.setStatus({
             status: 'offline',
           });
