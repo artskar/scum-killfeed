@@ -192,8 +192,8 @@ const fetchEffect = (prevKillfeed = []) => {
 };
 
 robot.on('ready', function () {
-  console.log(robot.user.username + ' is run!');
-  robot.channels.cache.get(target_channel).send(robot.user.username + ' is back on duty!');
+  console.log(robot.user.username + ' is on duty!');
+  robot.channels.cache.get(target_channel).send(robot.user.username + ' is on duty!');
   robot.user.setStatus({
     status: 'online',
   });
