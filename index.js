@@ -157,20 +157,28 @@ const fetchEffect = (prevKillfeed = []) => {
             type: 'WATCHING',
           });
           if (errorState.isError) {
-            errorState.setError(false);
             robot.user.setStatus({
               status: 'online',
             });
-            console.log('Fetch after rejected is succeed', reject);
-            channel.send(robot.user.username + ' is back on duty!');
+            console.log('Bot Is back on duty after an Error');
+            const isNotFirstTimeError = errorState.timer !== 2.5;
+            if (isNotFirstTimeError) {
+              channel.send(robot.user.username + ' is back on duty after an Error!');
+            }
+            errorState.setError(false);
           }
         }
         setTimeout(() => fetchEffect(newKillfeed), requestTime);
       },
       reject => {
         if (isProduction) {
-          const showEveryone = errorState.timer === 2.5 ? '' : '@everyone ';
-          channel.send(showEveryone + 'Fetch rejected, next Fetch in ' + errorState.timer + ' minutes' + '```' + JSON.stringify(reject) + '```' + 'probably auth.json data update needed ');
+          const isFirstTimeError = errorState.timer === 2.5;
+          if (!isFirstTimeError) {
+            const isThirdTimeError = errorState.timer > 5;
+            const showEveryone = isThirdTimeError ? '' : '@everyone ';
+            const advice = isThirdTimeError ? '' : 'probably auth.json data update needed '; 
+            channel.send(showEveryone + 'Fetch rejected, next Fetch in ' + errorState.timer + ' minutes' + '```' + JSON.stringify(reject) + '```' + advice);
+          }
           robot.user.setStatus({
             status: 'offline',
           });
