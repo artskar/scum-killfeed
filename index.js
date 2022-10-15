@@ -1,17 +1,19 @@
-const { Client, Intents } = require('discord.js');
-const fetch = require('node-fetch');
-const { authorization, source_channel, target_channel, cookie, token, debug } = require('./auth.json');
-const { names, with_logs, trapkills_only, timezone } = require('./config.json');
+import { Client, Intents } from 'discord.js';
+import fetch from 'node-fetch';
+import auth from './auth.json' assert { type: "json" };
+import config from './config.json' assert { type: "json" };
+import { getEmbedKill, getKillLog, parseKillData, parseKillToStatus } from './kills.utils.js';
 
-const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+const { authorization, source_channel, target_channel, cookie, token, debug } = auth;
+const { with_logs } = config;
 
 const isProduction = debug !== 'true';
 const withLogs = with_logs === 'true';
-const isTrapkillsOnly = trapkills_only === 'true';
 
-const defaultColumnLength = 15;
 const messagesCount = 10;
 const requestTime = 30 * 1000;
+
+const robot = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
 
 const errorState = {
   isError: false,
@@ -32,106 +34,7 @@ const errorState = {
   }
 };
 
-const traps = [
-  'Mine 01',
-  'Mine 02',
-  'Improvised Mine',
-  'PipeBomb',
-  'PromTrap',
-  'Claymore',
-  'Improvised Claymore',
-  'BarbedSpikeTrap',
-  'StakePitTrap',
-  'PressureCookerBomb',
-  'CartridgeTrap',
-];
-
-const getEmbed = (killer, victim, weapon, distance, time, text = ' ') => ({
-  content: text,
-  embeds: [{
-    type: 'rich',
-    color: 6591981,
-    fields: [
-      {
-        name: killer,
-        value: weapon,
-        inline: true
-      },
-      {
-        name: '\u200B',
-        value: '\u200B',
-        inline: true
-      },
-      {
-        name: victim,
-        value: distance,
-        inline: true
-      }
-    ],
-    footer: {
-      text: time
-    }
-  }]
-});
-
-const clean = str => str.replace(':medal: ', '').replace(':skull_crossbones: ', '').replaceAll('*', '')
 const isContainId = idArray => ({ id }) => idArray.findIndex(item => item.id === id) < 0;
-const log = str => withLogs && console.log(str);
-const eq = (str, limit = defaultColumnLength) => str.concat('               ').substring(0, limit);
-const eqLast = (str, limit = defaultColumnLength) => '               '.concat(str).slice(-limit);
-const hoursCorrection = hour => {
-  if (hour < 10) {
-    return '0' + hour;
-  } else if (hour === 24) {
-    return '00';
-  } else {
-    return hour;
-  }
-}
-const getTime = time => {
-  const hours = hoursCorrection(parseInt(time.substr(0, 2), 10) + parseInt(timezone, 10));
-  const minutes = time.substr(3, 2);
-  return `${hours}:${minutes}`;
-}
-
-const parseKill = killData => {
-  const time = killData.timestamp ? getTime(new Date(killData.timestamp).toTimeString()) : ' ';
-  const embeds = killData.embeds && killData.embeds[0];
-  if (embeds) {
-    const killer = clean(embeds.title);
-    const victim = clean(embeds.description);
-    const fields = embeds.fields.map(field => field.value);
-    if (fields.length > 1) {
-      const weapon = clean(fields[0]);
-      const distance = clean(fields[1]);
-      log(`${killer.length <= defaultColumnLength ? eqLast(killer) : eq(killer)} - ${eq(victim)} | ${eqLast(distance, 5)} - ${eq(weapon)} ${time}`);
-      if (names.includes(killer) || names.includes(victim)) {
-        if (traps.includes(weapon) && names.includes(killer)) {
-          return getEmbed(killer, victim, weapon, distance, time, '@everyone trapkill');
-        }
-        if (!isTrapkillsOnly) {
-          return getEmbed(killer, victim, weapon, distance, time);
-        }
-      }
-      return null;
-    }
-    log(`no fields: ${eq(killer)}  -  ${victim} | ${time}`);
-    return null;
-  } else {
-    log('no embeds', killData);
-    return null;
-  }
-};
-const parseKillToStatus = killData => {
-  const embeds = killData.embeds && killData.embeds[0];
-  if (embeds) {
-    const killer = clean(embeds.title);
-    const victim = clean(embeds.description);
-    return `${eq(killer)}  -  ${victim}`;
-  } else {
-    return ' ';
-  }
-};
 
 const fetchEffect = (prevKillfeed = []) => {
   const channel = robot.channels.cache.get(target_channel);
@@ -145,22 +48,34 @@ const fetchEffect = (prevKillfeed = []) => {
   })
     .then(response => response.json())
     .then(
-      data => {
-        const newKills = data.filter(isContainId(prevKillfeed));
+      killFeed => {
+        const newKills = killFeed.filter(isContainId(prevKillfeed));
         const newKillfeed = [...newKills, ...prevKillfeed].slice(0, messagesCount);
-        const kills = newKills.reverse().map(parseKill).filter(kill => kill !== null);
+        const parsedKills = newKills.reverse().map(parseKillData);
+        const kills = parsedKills.reduce((filtered, kill) => {
+          const embed = getEmbedKill(kill);
+          embed && filtered.push(embed);
+          return filtered;
+        }, []);
+
+        if (withLogs) {
+          parsedKills.map(kill => console.log(getKillLog(kill)));
+        }
+
         if (isProduction && newKills.length) {
           kills.map(kill => {
             channel.send(kill);
           });
+
           robot.user.setActivity(parseKillToStatus(newKills.at(-1)), {
             type: 'WATCHING',
           });
+
           if (errorState.isError) {
             robot.user.setStatus({
               status: 'online',
             });
-            console.log('Bot Is back on duty after an Error');
+            withLogs && console.log('Bot Is back on duty after an Error');
             const isNotFirstTimeError = errorState.timer !== 2.5;
             if (isNotFirstTimeError) {
               channel.send(robot.user.username + ' is back on duty after an Error!');
@@ -168,22 +83,27 @@ const fetchEffect = (prevKillfeed = []) => {
             errorState.setError(false);
           }
         }
+
         setTimeout(() => fetchEffect(newKillfeed), requestTime);
       },
       reject => {
         if (isProduction) {
           const isFirstTimeError = errorState.timer === 2.5;
+
           if (!isFirstTimeError) {
             const isThirdTimeError = errorState.timer > 5;
             const showEveryone = isThirdTimeError ? '' : '@everyone ';
-            const advice = isThirdTimeError ? '' : 'probably auth.json data update needed '; 
+            const advice = isThirdTimeError ? '' : 'probably auth.json data update needed ';
             channel.send(showEveryone + 'Fetch rejected, next Fetch in ' + errorState.timer + ' minutes' + '```' + JSON.stringify(reject) + '```' + advice);
           }
+
           robot.user.setStatus({
             status: 'offline',
           });
         }
+
         console.log('Fetch rejected, probably auth.json data update needed, next Fetch in ' + errorState.timer + ' minutes', reject);
+
         setTimeout(() => {
           errorState.setError(true);
           fetchEffect(newKillfeed);
@@ -193,13 +113,17 @@ const fetchEffect = (prevKillfeed = []) => {
 
 robot.on('ready', function () {
   console.log(robot.user.username + ' is on duty!');
+
   robot.channels.cache.get(target_channel).send(robot.user.username + ' is on duty!');
+
   robot.user.setStatus({
     status: 'online',
   });
+
   robot.user.setActivity('killfeed', {
     type: 'WATCHING',
   });
+
   fetchEffect();
 });
 

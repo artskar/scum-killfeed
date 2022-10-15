@@ -1,6 +1,7 @@
 {
   "name": "killfeed",
-  "version": "1.0.3",
+  "version": "1.0.4",
+  "type": "module",
   "description": "SCUM game discord killfeed graber",
   "main": "index.js",
   "scripts": {
