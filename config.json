@@ -1,7 +1,7 @@
 {
     "names": ["ncux","Mayasaur","MyFight"],
 
-    "timezone": "1",
+    "timezone": "+3",
     "with_logs" : "true",
     "trapkills_only": "false",
 
