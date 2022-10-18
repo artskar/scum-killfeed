@@ -106,7 +106,7 @@ const fetchEffect = (prevKillfeed = []) => {
 
         setTimeout(() => {
           errorState.setError(true);
-          fetchEffect(newKillfeed);
+          fetchEffect(prevKillfeed);
         }, errorState.timer * 60 * 1000);
       });
 };
@@ -114,7 +114,7 @@ const fetchEffect = (prevKillfeed = []) => {
 robot.on('ready', function () {
   console.log(robot.user.username + ' is on duty!');
 
-  robot.channels.cache.get(target_channel).send(robot.user.username + ' is on duty!');
+  // robot.channels.cache.get(target_channel).send(robot.user.username + ' is on duty!');
 
   robot.user.setStatus({
     status: 'online',

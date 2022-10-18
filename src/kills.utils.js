@@ -22,8 +22,8 @@ const traps = [
 ];
 
 const makeEmbed = (parsedKill, text = ' ') => {
-    const { killer, victim, time, weapon, distance, } = parsedKill;
-    const sector = parseKill.sector ? `| ${parseKill.sector}` : '';
+    const { killer, victim, time, weapon, distance } = parsedKill;
+    const sector = parsedKill.sector ? `| ${parsedKill.sector}` : '';
     return ({
         content: text,
         embeds: [{
